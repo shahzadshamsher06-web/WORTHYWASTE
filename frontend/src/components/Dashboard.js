@@ -1,11 +1,38 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { inventoryAPI, analyticsAPI } from '../services/api';
 
+// Skeleton loading component
+const SkeletonLoader = ({ count = 1 }) => (
+  <div className="skeleton-loader">
+    {Array(count).fill(0).map((_, i) => (
+      <div key={i} className="skeleton-item" />
+    ))}
+  </div>
+);
+
+// Error component with retry functionality
+const ErrorMessage = ({ message, onRetry }) => (
+  <div className="error-message">
+    <i className="fas fa-exclamation-triangle" aria-hidden="true"></i>
+    <span>{message}</span>
+    {onRetry && (
+      <button 
+        onClick={onRetry} 
+        className="btn btn-link"
+        aria-label="Retry loading data"
+      >
+        Retry
+      </button>
+    )}
+  </div>
+);
+
 const Dashboard = ({ user }) => {
   const [inventory, setInventory] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
   const loadDashboardData = useCallback(async () => {
     if (!user?._id) return;
@@ -14,29 +41,87 @@ const Dashboard = ({ user }) => {
       setLoading(true);
       setError('');
 
+      // Set default analytics immediately to prevent undefined errors
+      setAnalytics({
+        savedFoodCount: 0,
+        greenCoinsEarned: 0,
+        totalEarned: 0,
+        environmentalImpact: { co2Saved: 0 },
+        insights: [
+          'Loading your dashboard...',
+          'This should only take a moment',
+          'We\'re getting your data ready'
+        ]
+      });
+
       const [inventoryResponse, analyticsResponse] = await Promise.all([
-        inventoryAPI.list(user._id),
-        analyticsAPI.getUserSummary(user._id)
+        inventoryAPI.list(user._id).catch(err => {
+          console.error('Inventory API error:', err);
+          return { data: { success: false, message: 'Failed to load inventory' }};
+        }),
+        analyticsAPI.getUserSummary(user._id).catch(err => {
+          console.error('Analytics API error:', err);
+          return { data: { success: false, message: 'Failed to load analytics' }};
+        })
       ]);
 
+      // Handle inventory response
       if (inventoryResponse?.data?.success) {
-        setInventory(inventoryResponse.data.items || []);
+        setInventory(Array.isArray(inventoryResponse.data.items) ? inventoryResponse.data.items : []);
+      } else {
+        console.warn('Inventory load warning:', inventoryResponse?.data?.message);
+        // Don't throw error, just log and continue with empty inventory
+        setInventory([]);
       }
 
+      // Handle analytics response
       if (analyticsResponse?.data?.success) {
-        setAnalytics(analyticsResponse.data.summary);
+        setAnalytics({
+          savedFoodCount: analyticsResponse.data.summary?.savedFoodCount || 0,
+          greenCoinsEarned: analyticsResponse.data.summary?.greenCoinsEarned || 0,
+          totalEarned: analyticsResponse.data.summary?.totalEarned || 0,
+          environmentalImpact: {
+            co2Saved: analyticsResponse.data.summary?.environmentalImpact?.co2Saved || 0
+          },
+          insights: Array.isArray(analyticsResponse.data.summary?.insights) && 
+                   analyticsResponse.data.summary.insights.length > 0
+            ? analyticsResponse.data.summary.insights 
+            : [
+                'Start adding food items to get personalized insights',
+                'Check your inventory regularly to prevent food waste',
+                'Visit the marketplace to sell excess food items'
+              ]
+        });
+      } else {
+        console.warn('Analytics load warning:', analyticsResponse?.data?.message);
+        // Keep default analytics with a warning message
+        setAnalytics(prev => ({
+          ...prev,
+          insights: [
+            'Analytics data is currently limited',
+            'Some features may not be available',
+            'Please try refreshing the page if the issue persists'
+          ]
+        }));
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
-      setError('Failed to load dashboard data. Please try again.');
+      setError(err.message || 'Failed to load dashboard data');
+      // Auto-retry up to 3 times
+      if (retryCount < 3) {
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }
   }, [user?._id]);
 
+  // Add retryCount to dependencies to trigger retry
   useEffect(() => {
     loadDashboardData();
-  }, [loadDashboardData]);
+  }, [loadDashboardData, retryCount]);
 
   const handleDeleteItem = async (itemId) => {
     if (!window.confirm('Are you sure you want to delete this item?')) {
@@ -69,12 +154,43 @@ const Dashboard = ({ user }) => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Loading state with skeleton loaders
   if (loading) {
     return (
-      <div className="main-content">
+      <div className="main-content" aria-busy="true" aria-live="polite">
         <div className="container">
-          <div className="loading">
-            <div className="loading-spinner"></div>
+          <div className="card">
+            <div className="card-header">
+              <h1 className="card-title">
+                <i className="fas fa-home" aria-hidden="true"></i>
+                Loading your dashboard...
+              </h1>
+              <div className="card-subtitle">
+                We're getting your data ready
+              </div>
+            </div>
+            
+            <div className="stats-grid">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="stat-card" aria-hidden="true">
+                  <div className="skeleton-stat" style={{ width: '60px', height: '32px' }} />
+                  <div className="skeleton-label" style={{ width: '80px', height: '16px', marginTop: '8px' }} />
+                </div>
+              ))}
+            </div>
+            
+            <div className="card" style={{ margin: '24px' }}>
+              <div className="card-header">
+                <h2 className="card-title">
+                  <i className="fas fa-apple-alt" aria-hidden="true"></i>
+                  Loading your food items...
+                </h2>
+                <div className="card-subtitle">
+                  <span className="skeleton-subtitle" style={{ width: '120px', display: 'inline-block' }} />
+                </div>
+              </div>
+              <SkeletonLoader count={3} />
+            </div>
           </div>
         </div>
       </div>
@@ -98,33 +214,36 @@ const Dashboard = ({ user }) => {
           </div>
 
           {error && (
-            <div className="error">
-              <i className="fas fa-exclamation-circle"></i>
-              {error}
+            <div className="error-message-container">
+              <ErrorMessage 
+                message={error} 
+                onRetry={() => {
+                  setRetryCount(0);
+                  loadDashboardData();
+                }} 
+              />
             </div>
           )}
 
           {/* Quick Stats */}
-          {analytics && (
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-value">{analytics.savedFoodCount}</div>
-                <div className="stat-label">Food Items Saved</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">{analytics.greenCoinsEarned}</div>
-                <div className="stat-label">Green Coins</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">₹{analytics.totalEarned}</div>
-                <div className="stat-label">Total Earned</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">{analytics.environmentalImpact?.co2Saved || 0}kg</div>
-                <div className="stat-label">CO₂ Saved</div>
-              </div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-value">{analytics.savedFoodCount}</div>
+              <div className="stat-label">Food Items Saved</div>
             </div>
-          )}
+            <div className="stat-card">
+              <div className="stat-value">{analytics.greenCoinsEarned}</div>
+              <div className="stat-label">Green Coins</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">₹{analytics.totalEarned}</div>
+              <div className="stat-label">Total Earned</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{analytics.environmentalImpact?.co2Saved || 0}kg</div>
+              <div className="stat-label">CO₂ Saved</div>
+            </div>
+          </div>
 
           {/* Food Inventory */}
           <div className="card">
@@ -136,7 +255,6 @@ const Dashboard = ({ user }) => {
               <div className="card-subtitle">
                 {inventory.length} items • Sorted by expiry date
               </div>
-            </div>
 
             {inventory.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>
@@ -163,10 +281,21 @@ const Dashboard = ({ user }) => {
                       </span>
                       <button
                         className="btn btn-danger btn-small"
-                        onClick={() => handleDeleteItem(item._id)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDeleteItem(item._id);
+                        }}
                         title="Delete item"
+                        aria-label={`Delete ${item.name}`}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleDeleteItem(item._id);
+                          }
+                        }}
+                        tabIndex={0}
                       >
-                        <i className="fas fa-trash"></i>
+                        <i className="fas fa-trash" aria-hidden="true"></i>
                       </button>
                     </div>
                   </div>
@@ -201,7 +330,6 @@ const Dashboard = ({ user }) => {
                   </span>
                 </div>
               </div>
-            </div>
 
             <div className="card">
               <h3 className="card-title">
@@ -223,11 +351,13 @@ const Dashboard = ({ user }) => {
                   </p>
                 )}
               </div>
-            </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
+  </div>
+  </div>
   );
 };
 
