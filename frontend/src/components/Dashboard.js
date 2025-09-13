@@ -16,7 +16,7 @@ const Dashboard = ({ user }) => {
 
       const [inventoryResponse, analyticsResponse] = await Promise.all([
         inventoryAPI.list(user._id),
-        analyticsAPI.getSummary(user._id)
+        analyticsAPI.getUserSummary(user._id)
       ]);
 
       if (inventoryResponse?.data?.success) {
