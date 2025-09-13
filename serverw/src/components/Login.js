@@ -60,7 +60,7 @@ const Login = ({ onLogin }) => {
       <div className="login-card">
         <div className="login-title">
           <i className="fas fa-leaf" style={{ color: '#667eea' }}></i>
-          NutriTrackAI
+          Worthy Waste
         </div>
         <div className="login-subtitle">
           Smart Food Waste Management Platform

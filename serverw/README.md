@@ -1,6 +1,6 @@
-# NutriTrackAI Frontend
+# Worthy Waste Frontend
 
-A modern React frontend for the NutriTrackAI food waste management platform. This application provides an intuitive interface for tracking food inventory, classifying waste, connecting with buyers in the marketplace, and analyzing environmental impact.
+A modern React frontend for the Worthy Waste food waste management platform. This application provides an intuitive interface for tracking food inventory, classifying waste, connecting with buyers in the marketplace, and analyzing environmental impact.
 
 ## 🚀 Features
 

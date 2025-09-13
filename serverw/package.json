@@ -1,7 +1,7 @@
 {
   "name": "nutritrack-ai-frontend",
   "version": "1.0.0",
-  "description": "React frontend for NutriTrackAI - Food waste management and marketplace platform",
+  "description": "React frontend for Worthy Waste - Food waste management and marketplace platform",
   "private": true,
   "dependencies": {
     "axios": "^1.6.0",

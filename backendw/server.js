@@ -60,7 +60,7 @@ connectDB();
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'NutriTrackAI Backend is running!',
+    message: 'Worthy Waste Backend is running!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
@@ -77,7 +77,7 @@ app.use('/api/analytics', analyticsRoutes);
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Welcome to NutriTrackAI Backend API',
+    message: 'Welcome to Worthy Waste Backend API',
     version: '1.0.0',
     endpoints: {
       auth: '/api/auth',
@@ -197,7 +197,7 @@ process.on('SIGTERM', async () => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log('\n🚀 NutriTrackAI Backend Server Started!');
+  console.log('\n🚀 Worthy Waste Backend Server Started!');
   console.log(`📡 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);

@@ -64,7 +64,7 @@ function App() {
         backgroundColor: '#f9fafb'
       }}>
         <div className="loading-spinner" style={{ width: '50px', height: '50px', marginBottom: '20px' }}></div>
-        <p style={{ color: '#6b7280', fontSize: '1.1rem' }}>Loading NutriTrackAI...</p>
+        <p style={{ color: '#6b7280', fontSize: '1.1rem' }}>Loading Worthy Waste...</p>
       </div>
     );
   }
@@ -125,7 +125,7 @@ function App() {
             <div>
               <h4 style={{ marginBottom: '16px', color: '#f3f4f6' }}>
                 <i className="fas fa-leaf" style={{ marginRight: '8px', color: '#10b981' }}></i>
-                NutriTrackAI
+                Worthy Waste
               </h4>
               <p style={{ color: '#d1d5db', fontSize: '0.9rem', lineHeight: '1.6' }}>
                 Reducing food waste through AI-powered classification and smart marketplace connections.
@@ -230,7 +230,7 @@ function App() {
             gap: '16px'
           }}>
             <p style={{ margin: 0, color: '#9ca3af', fontSize: '0.9rem' }}>
-              © 2024 NutriTrackAI. Built for a sustainable future.
+              © 2024 Worthy Waste. Built for a sustainable future.
             </p>
             <div style={{ display: 'flex', gap: '24px' }}>
               <a href="#" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.9rem' }}>
