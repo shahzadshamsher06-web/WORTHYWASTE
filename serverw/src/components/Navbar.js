@@ -15,7 +15,7 @@ const Navbar = ({ user, currentPage, onPageChange, onLogout }) => {
         <div className="navbar-content">
           <div className="navbar-brand">
             <i className="fas fa-leaf"></i>
-            NutriTrackAI
+            Worthy Waste
           </div>
           
           <div className="navbar-nav">

@@ -1,6 +1,6 @@
-# NutriTrackAI Backend
+# Worthy Waste Backend
 
-A complete Node.js + Express + MongoDB backend for NutriTrackAI - A food waste management and marketplace platform.
+A complete Node.js + Express + MongoDB backend for Worthy Waste - A food waste management and marketplace platform.
 
 ## 🚀 Quick Start
 

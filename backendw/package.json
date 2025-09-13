@@ -1,7 +1,7 @@
 {
   "name": "nutritrack-ai-backend",
   "version": "1.0.0",
-  "description": "Backend for NutriTrackAI - A food waste management and marketplace platform",
+  "description": "Backend for Worthy Waste - A food waste management and marketplace platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
