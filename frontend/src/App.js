@@ -6,39 +6,34 @@ import Login from './components/Login';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import AddFood from './components/AddFood';
-import ClassifyWaste from './components/ClassifyWaste';
 import Marketplace from './components/Marketplace';
+import Profile from './components/Profile';
+import ClassifyWaste from './components/ClassifyWaste';
 import Analytics from './components/Analytics';
+import { getCurrentUser, isAuthenticated } from './services/auth';
 
 function App() {
-  const [user, setUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing user session on app load
+  // Load user from auth service on initial render
   useEffect(() => {
-    const savedUser = localStorage.getItem('nutritrack_user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-      } catch (error) {
-        console.error('Error parsing saved user data:', error);
-        localStorage.removeItem('nutritrack_user');
-      }
+    if (isAuthenticated()) {
+      const userData = getCurrentUser();
+      setUser(userData);
     }
     setLoading(false);
   }, []);
 
   const handleLogin = (userData) => {
     setUser(userData);
-    localStorage.setItem('nutritrack_user', JSON.stringify(userData));
     setCurrentPage('dashboard');
   };
 
   const handleLogout = () => {
+    // This will clear token and user from localStorage
     setUser(null);
-    localStorage.removeItem('nutritrack_user');
     setCurrentPage('dashboard');
   };
 
@@ -293,7 +288,6 @@ function App() {
             gap: '16px'
           }}>
             <p style={{ margin: 0, color: '#9ca3af', fontSize: '0.9rem' }}>
-              © 2024 Worthy Waste. Built for a sustainable future.
             </p>
             <div style={{ display: 'flex', gap: '24px' }}>
               <button 

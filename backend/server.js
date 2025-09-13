@@ -7,6 +7,7 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const inventoryRoutes = require('./routes/inventory');
+const foodItemsRoutes = require('./routes/foodItems');
 const classifyRoutes = require('./routes/classify');
 const marketplaceRoutes = require('./routes/marketplace');
 const analyticsRoutes = require('./routes/analytics');
@@ -70,6 +71,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/food', foodItemsRoutes);  // Add this line for food items
 app.use('/api/classify', classifyRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/analytics', analyticsRoutes);

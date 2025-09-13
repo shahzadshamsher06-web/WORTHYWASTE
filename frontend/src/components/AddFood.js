@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import { inventoryAPI } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import api from '../services/auth'; // Using our new auth service
+import { getCurrentUser } from '../services/auth';
 
 const AddFood = ({ user, onFoodAdded }) => {
+  const [foodItems, setFoodItems] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     quantity: '',
@@ -13,7 +16,6 @@ const AddFood = ({ user, onFoodAdded }) => {
     category: 'other',
     notes: ''
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -75,29 +77,29 @@ const AddFood = ({ user, onFoodAdded }) => {
       const purchaseDate = new Date(formData.purchaseDate);
       const expiryDate = new Date(formData.expiryDate);
       
-      if (expiryDate <= purchaseDate) {
-        throw new Error('Expiry date must be after purchase date');
+      // Get current user
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('User not authenticated');
       }
-
+      
+      // Create food item data
       const foodData = {
-        userId: user._id,
-        name: formData.name.trim(),
+        ...formData,
+        userId: currentUser._id,
         quantity: parseFloat(formData.quantity),
-        unit: formData.unit,
-        purchaseDate: formData.purchaseDate,
-        expiryDate: formData.expiryDate,
-        storage: formData.storage,
         calories: formData.calories ? parseInt(formData.calories) : 0,
-        category: formData.category,
-        notes: formData.notes.trim()
+        status: 'available'
       };
-
-      const response = await inventoryAPI.add(foodData);
-
+      
+      console.log('Submitting food item:', foodData);
+      
+      // Call the API
+      const response = await api.post('/inventory/add', foodData);
+      console.log('Add food response:', response);
+      
       if (response.data.success) {
         setSuccess('Food item added successfully!');
-        
-        // Reset form
         setFormData({
           name: '',
           quantity: '',
@@ -109,14 +111,14 @@ const AddFood = ({ user, onFoodAdded }) => {
           category: 'other',
           notes: ''
         });
-
+        
+        // Refresh the food items list
+        await loadFoodItems();
+        
         // Notify parent component
         if (onFoodAdded) {
           onFoodAdded(response.data.foodItem);
         }
-
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(''), 3000);
       } else {
         throw new Error(response.data.message || 'Failed to add food item');
       }
@@ -143,10 +145,106 @@ const AddFood = ({ user, onFoodAdded }) => {
     }
   }, [formData.purchaseDate, formData.expiryDate]);
 
+  const loadFoodItems = async () => {
+    try {
+      console.log('Starting to load food items...');
+      setLoading(true);
+      
+      // Get current user
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      console.log('Fetching food items for user:', currentUser._id);
+      const response = await api.get('/food/items');
+      console.log('API Response:', response);
+      
+      if (!response) {
+        throw new Error('No response received from the server');
+      }
+      
+      if (response.status === 401) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      if (!response.data) {
+        throw new Error('No data in response');
+      }
+      
+      console.log('Response data:', response.data);
+      
+      if (response.data.success) {
+        const items = Array.isArray(response.data.foodItems) ? response.data.foodItems : [];
+        console.log('Setting food items:', items);
+        setFoodItems(items);
+      } else {
+        throw new Error(response.data.message || 'Failed to load food items');
+      }
+    } catch (err) {
+      console.error('Error loading food items:', err);
+      setError(err.message || 'Failed to load food items');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load food items on component mount and when user changes
+  useEffect(() => {
+    loadFoodItems();
+  }, [user]); // Add user to dependency array to reload if user changes
+  
+  // Debug log when foodItems changes
+  useEffect(() => {
+    console.log('Current food items:', foodItems);
+  }, [foodItems]);
+
   return (
     <div className="main-content">
       <div className="container">
         <div className="card">
+          <div className="card-header">
+            <h2>Food Inventory</h2>
+          </div>
+          
+          {/* Food Items Table */}
+          <div style={{ padding: '20px' }}>
+            <h3>Current Food Items</h3>
+            {loading ? (
+              <div>Loading food items... (Check browser console for details)</div>
+            ) : error ? (
+              <div style={{ color: 'red' }}>
+                <p>Error: {error}</p>
+                <p>Check browser console for more details.</p>
+              </div>
+            ) : foodItems.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f3f4f6' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Name</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Quantity</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Storage</th>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Expiry Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {foodItems.map((item) => (
+                      <tr key={item._id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '12px' }}>{item.name}</td>
+                        <td style={{ padding: '12px' }}>{item.quantity} {item.unit}</td>
+                        <td style={{ padding: '12px', textTransform: 'capitalize' }}>{item.storage}</td>
+                        <td style={{ padding: '12px' }}>{new Date(item.expiryDate).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div>No food items found. Add some using the form below.</div>
+            )}
+          </div>
+          
           <div className="card-header">
             <div>
               <h1 className="card-title">

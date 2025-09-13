@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { authAPI } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { login, isAuthenticated } from '../services/auth';
 
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -34,18 +34,17 @@ const Login = ({ onLogin }) => {
         throw new Error('Please enter a valid phone number');
       }
 
-      const response = await authAPI.login({
-        phone: cleanPhone,
-        name: formData.name.trim(),
-        email: formData.email.trim()
-      });
-
-      if (response.data.success) {
-        // Store user data in localStorage
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        onLogin(response.data.user);
+      // Call the login function from auth service
+      const userData = await login(
+        cleanPhone,
+        formData.name.trim(),
+        formData.email.trim()
+      );
+      
+      if (userData) {
+        onLogin(userData);
       } else {
-        throw new Error(response.data.message || 'Login failed');
+        throw new Error('Login failed: No user data received');
       }
     } catch (err) {
       console.error('Login error:', err);

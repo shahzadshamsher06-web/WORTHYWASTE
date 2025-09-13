@@ -39,12 +39,28 @@ export const authAPI = {
   getUser: (userId) => api.get(`/auth/user/${userId}`),
 };
 
+// Helper function to get auth token
+const getAuthToken = () => {
+  return localStorage.getItem('token'); // or wherever you store the auth token
+};
+
 // Inventory API calls
 export const inventoryAPI = {
-  add: (foodData) => api.post('/inventory/add', foodData),
-  list: (userId) => api.get(`/inventory/list/${userId}`),
-  update: (id, updateData) => api.put(`/inventory/${id}`, updateData),
-  delete: (id) => api.delete(`/inventory/${id}`),
+  add: (foodData) => api.post('/inventory/add', foodData, {
+    headers: { 'x-auth-token': getAuthToken() }
+  }),
+  list: (userId) => api.get(`/inventory/list/${userId}`, {
+    headers: { 'x-auth-token': getAuthToken() }
+  }),
+  getFoodItems: () => api.get('/food/items', {
+    headers: { 'x-auth-token': getAuthToken() }
+  }),
+  update: (id, updateData) => api.put(`/inventory/${id}`, updateData, {
+    headers: { 'x-auth-token': getAuthToken() }
+  }),
+  delete: (id) => api.delete(`/inventory/${id}`, {
+    headers: { 'x-auth-token': getAuthToken() }
+  }),
 };
 
 // Classification API calls

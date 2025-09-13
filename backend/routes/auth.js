@@ -1,4 +1,5 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const router = express.Router();
 
@@ -40,7 +41,14 @@ router.post('/login', async (req, res) => {
       await user.save();
     }
 
-    // Return user object (excluding sensitive data)
+    // Create JWT token
+    const token = jwt.sign(
+      { user: { id: user._id } },
+      process.env.JWT_SECRET || 'your_jwt_secret',
+      { expiresIn: '30d' }
+    );
+
+    // Return user object with token (excluding sensitive data)
     const userResponse = {
       _id: user._id,
       phone: user.phone,
@@ -59,7 +67,8 @@ router.post('/login', async (req, res) => {
     res.status(200).json({
       success: true,
       message: user.createdAt === user.updatedAt ? 'User created successfully' : 'Login successful',
-      user: userResponse
+      user: userResponse,
+      token // Include the JWT token in the response
     });
 
   } catch (error) {
